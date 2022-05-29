@@ -8,29 +8,34 @@ const axios = require('axios').default;
 export default function App() {
   const [page, setPage] = useState(1)
   const [key, setKey] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [items, setItems] = useState([])
+  const [fetchElements, setFetchElements] = useState({ loading: false, error: null, items: [] })
+  // const [error, setError] = useState(null)
+  // const [items, setItems] = useState([])
   const [modal, setModal] = useState({ appearance: false, modalContent: {} })
 
   useEffect(() => {
     if (!key) return
-    setLoading(true);
-    setError(null)
+    setFetchElements((prev) => {
+      return { ...prev, loading: true, error: null }
+    })
     try {
       async function getData() {
         const response = await axios.get(`https://pixabay.com/api/?q=${key}&page=${page}&key=27028263-30a4c0e676d46eddbf4883679&image_type=photo&orientation=horizontal&per_page=12`)
-        if (page === 1) setItems(response.data.hits)
-        else setItems((prev) => [...prev, ...response.data.hits])
-        setLoading(false);
+        if (page === 1) setFetchElements((prev) => {
+          return { ...prev, loading: false, items: response.data.hits }
+        })
+        else setFetchElements((prev) => {
+          return { ...prev, loading: false, items: [...prev.items, ...response.data.hits] }
+        })
       }
       getData()
     } catch (e) {
-      setError(e)
-      setLoading(false);
-      alert(error)
+      setFetchElements((prev) => {
+        return { ...prev, loading: false, error: e }
+      })
+      alert(fetchElements.error)
     }
-  }, [key, page, error])
+  }, [key, page, fetchElements.error])
 
   const showModal = (url, tags) => {
     setModal({
@@ -55,10 +60,10 @@ export default function App() {
     <div >
       <Searchbar
         onSubmit={setQuery} />
-      {Boolean(items.length) && <ImageGallery
-        items={items} onClick={showModal} />}
-      {Boolean(items.length) && !loading && <Button onClick={loadMore} text={"Load more"} />}
-      {loading && <Loader boolean={loading} />}
+      {Boolean(fetchElements.items.length) && <ImageGallery
+        items={fetchElements.items} onClick={showModal} />}
+      {Boolean(fetchElements.items.length) && !fetchElements.loading && <Button onClick={loadMore} text={"Load more"} />}
+      {fetchElements.loading && <Loader boolean={fetchElements.loading} />}
       {modal.appearance && <Modal
         close={closeModal}
         children={< img src={modal.modalContent.url} alt={modal.modalContent.tags} />} />
