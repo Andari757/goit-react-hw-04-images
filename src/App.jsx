@@ -3,77 +3,83 @@ import Button from "components/Button/Button";
 import Searchbar from "components/Searchbar/Searchbar";
 import Loader from "components/Loader/Loader";
 import Modal from "components/Modal/Modal";
-import { Component } from "react";
+import { useState, useEffect } from "react";
 const axios = require('axios').default;
-export default class App extends Component {
-  state = {
-    page: 1,
-    key: "",
-    loading: false,
-    error: null,
-    items: [],
-    modal: false,
-    modalContent: {}
-  }
-  async componentDidUpdate(prevProps, prevState) {
-    if (this.state.key !== prevState.key || this.state.page > prevState.page) {
-      this.setState({
-        loading: true,
-        error: null
-      });
-      try {
-        const response = await axios.get(`https://pixabay.com/api/?q=${this.state.key}&page=${this.state.page}&key=27028263-30a4c0e676d46eddbf4883679&image_type=photo&orientation=horizontal&per_page=12`)
-        this.state.key === prevState.key
-          ? this.setState((prev) => {
-            return { items: [...prev.items, ...response.data.hits], loading: false }
-          })
-          : this.setState({ items: response.data.hits, loading: false })
-      } catch (error) {
-        this.setState({
-          loading: false,
-          error: error.message
-        })
-      }
-    }
+export default function App() {
+  const [page, setPage] = useState(1)
+  const [key, setKey] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [items, setItems] = useState([])
+  const [modal, setModal] = useState({ appearance: false, modalContent: {} })
 
-  }
-  showModal = (url, tags) => {
-    this.setState({
-      modal: true,
+  useEffect(() => {
+    if (!key) return
+    setLoading(true);
+    setError(null)
+    try {
+      async function getData() {
+        const response = await axios.get(`https://pixabay.com/api/?q=${key}&page=${page}&key=27028263-30a4c0e676d46eddbf4883679&image_type=photo&orientation=horizontal&per_page=12`)
+        setItems(response.data.hits)
+        setLoading(false);
+      }
+      getData()
+    } catch (error) {
+      setLoading(false);
+      setError(error.message)
+    }
+  }, [key])
+
+  useEffect(() => {
+    if (page === 1) return
+    if (!key) return
+    setLoading(true);
+    setError(null)
+    try {
+      async function getData() {
+        const response = await axios.get(`https://pixabay.com/api/?q=${key}&page=${page}&key=27028263-30a4c0e676d46eddbf4883679&image_type=photo&orientation=horizontal&per_page=12`)
+        setItems((prev) => [...prev, ...response.data.hits])
+        setLoading(false);
+      }
+      getData()
+    } catch (error) {
+      setLoading(false);
+      setError(error.message)
+    }
+  }, [page])
+  const showModal = (url, tags) => {
+    setModal({
+      appearance: true,
       modalContent: { url: url, tags: tags }
     })
   }
-  closeModal = () => {
-    this.setState({
-      modal: false
+  const closeModal = () => {
+    setModal({
+      appearance: false
     })
   }
-  loadMore = () => {
-    this.setState((prev) => {
-      return {
-        page: prev.page + 1
-      }
-    })
+  const loadMore = () => {
+    setPage((prev) => prev + 1)
   }
-  setKey = (data) => {
-    this.setState({ key: data, page: 1 })
+  const setQuery = (data) => {
+    setKey(data)
+    setPage(1)
   }
-  render() {
-    const { items, loading, modal, modalContent } = this.state
-    return (
-      <div >
-        <Searchbar
-          onSubmit={this.setKey} />
-        {Boolean(items.length) && <ImageGallery
-          items={items} onClick={this.showModal} />}
-        {Boolean(items.length) && !loading && <Button onClick={this.loadMore} text={"Load more"} />}
-        {loading && <Loader boolean={loading} />}
-        {modal && <Modal
-          close={this.closeModal}
-          children={< img src={modalContent.url} alt={modalContent.tags} />} />
 
-        }
-      </div >
-    )
-  };
+  return (
+    <div >
+      <Searchbar
+        onSubmit={setQuery} />
+      {Boolean(items.length) && <ImageGallery
+        items={items} onClick={showModal} />}
+      {Boolean(items.length) && !loading && <Button onClick={loadMore} text={"Load more"} />}
+      {loading && <Loader boolean={loading} />}
+      {modal.appearance && <Modal
+        close={closeModal}
+        children={< img src={modal.modalContent.url} alt={modal.modalContent.tags} />} />
+
+      }
+    </div >
+  )
+
 };
