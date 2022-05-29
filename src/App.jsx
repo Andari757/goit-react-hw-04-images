@@ -20,7 +20,8 @@ export default function App() {
     try {
       async function getData() {
         const response = await axios.get(`https://pixabay.com/api/?q=${key}&page=${page}&key=27028263-30a4c0e676d46eddbf4883679&image_type=photo&orientation=horizontal&per_page=12`)
-        setItems(response.data.hits)
+        if (page === 1) setItems(response.data.hits)
+        else setItems((prev) => [...prev, ...response.data.hits])
         setLoading(false);
       }
       getData()
@@ -28,25 +29,8 @@ export default function App() {
       setLoading(false);
       setError(error.message)
     }
-  }, [key])
+  }, [key, page])
 
-  useEffect(() => {
-    if (page === 1) return
-    if (!key) return
-    setLoading(true);
-    setError(null)
-    try {
-      async function getData() {
-        const response = await axios.get(`https://pixabay.com/api/?q=${key}&page=${page}&key=27028263-30a4c0e676d46eddbf4883679&image_type=photo&orientation=horizontal&per_page=12`)
-        setItems((prev) => [...prev, ...response.data.hits])
-        setLoading(false);
-      }
-      getData()
-    } catch (error) {
-      setLoading(false);
-      setError(error.message)
-    }
-  }, [page])
   const showModal = (url, tags) => {
     setModal({
       appearance: true,
