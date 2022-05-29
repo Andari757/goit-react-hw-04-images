@@ -25,11 +25,12 @@ export default function App() {
         setLoading(false);
       }
       getData()
-    } catch (error) {
+    } catch (e) {
+      setError(e)
       setLoading(false);
-      setError(error.message)
+      alert(error)
     }
-  }, [key, page])
+  }, [key, page, error])
 
   const showModal = (url, tags) => {
     setModal({
